@@ -1,0 +1,152 @@
+#!/bin/sh -x
+# vim: set foldmethod=marker :
+
+HOSTNAME="$1"
+FAST="$2"
+
+# Only run on beaglebone. {{{
+if [ `dpkg --print-architecture` != armhf ] ; then
+	echo >&2 "This script should not run on the host.  Run upload instead"
+	exit 1
+fi
+# }}}
+
+systemctl enable apache2.service
+
+# Disable kernel log on /dev/ttyO0. {{{
+sed -i -e 's/console=${console} //' /boot/uboot/uEnv.txt
+# }}}
+
+# Set up eth0. {{{
+if ! grep -q '^iface eth0' /etc/network/interfaces ; then
+	cat >>/etc/network/interfaces <<EOF
+
+auto eth0
+allow-hotplug eth0
+iface eth0 inet static
+	address 192.168.76.2
+	netmask 255.255.255.0
+	broadcast 192.168.76.255
+	gateway 192.168.76.1
+EOF
+fi
+# }}}
+
+# Set the default route through USB while this script is running. {{{
+ip route add default via 192.168.7.1
+# }}}
+
+# Allow printer user to use sudo. {{{
+echo 'franklin3d ALL=NOPASSWD:ALL' > /etc/sudoers.d/franklin
+# }}}
+
+if ! $FAST ; then
+# Remove junk. {{{
+	rm -f /etc/init.d/led_aging.sh
+	apt-get -y remove --purge x11-common
+	apt-get -y autoremove
+# }}}
+
+# Move files to their proper location. {{{
+	cp /tmp/upgrade.gpg /root/
+	cp -r /tmp/Repetier-Server /var/lib/
+# }}}
+
+# Set hostname. {{{
+	if grep -q 'beaglebone' /etc/hosts ; then
+		echo $HOSTNAME > /etc/hostname
+		sed -i -e "s/beaglebone/$HOSTNAME/" /etc/hosts
+	fi
+# }}}
+
+# Add Franklin's repository to sources.list. {{{
+	cat > /etc/apt/sources.list.d/franklin.list <<EOF
+deb http://wijnen.dtdns.net/archive wheezy/all/
+deb http://wijnen.dtdns.net/archive wheezy/armhf/
+EOF
+# }}}
+
+# Upgrade system. {{{
+	apt-get -y update
+	apt-get -y upgrade
+	apt-get clean
+# }}}
+
+# Install new packages. {{{
+	apt-get -y install --allow-unauthenticated wijnen-archive-keyring
+	apt-get -y update
+	apt-get -y install dnsmasq
+	dpkg -i Repetier-Server-0.60.2-Linux.deb
+	#apt-get -y install franklin
+# }}}
+fi
+
+# Disable login on /dev/ttyO0. {{{
+systemctl mask serial-getty@ttyO0.service
+# }}}
+
+# Set up Franklin. {{{
+if ! grep -q '^ATEXIT=' /etc/default/franklin ; then
+	echo "ATEXIT='sudo shutdown -h now'" >> /etc/default/franklin
+fi
+if ! grep -q '^TLS=' /etc/default/franklin ; then
+	echo "TLS=False" >> /etc/default/franklin
+fi
+# }}}
+
+# Set up dnsmasq. {{{
+if ! grep -q '^dhcp-range=' /etc/dnsmasq.conf ; then
+	echo 'dhcp-range=192.168.76.1,192.168.76.1,12h' >> /etc/dnsmasq.conf
+	echo 'dhcp-range=192.168.7.1,192.168.7.1,12h' >> /etc/dnsmasq.conf
+fi
+if ! grep -q '^dhcp-option=3' /etc/dnsmasq.conf ; then
+	echo 'dhcp-option=3' >> /etc/dnsmasq.conf
+fi
+# }}}
+
+# Set up auto-upgrade from usb storage. {{{
+cat > /etc/rc.local <<EOF
+#!/bin/sh
+ip route add default via 192.168.76.1
+sleep 10
+if [ -b /dev/sda1 ] ; then
+	if mount /dev/sda1 /mnt ; then
+		for i in /mnt/*.sig ; do
+			target="\${i%.sig}"
+			if ! [ -f "\$i" ] ; then continue ; fi
+			if ! [ -f "\$target" ] ; then continue ; fi
+			if gpg --ignore-time-conflict --keyring /root/upgrade.gpg --no-default-keyring --verify "\$i" "\$target" ; then
+				if [ "\${target%.deb}" != "\$target" ] ; then
+					dpkg -i "\$target"
+					apt-get update -f
+				else
+					cp "\$target" /tmp/script
+					chmod a+x /tmp/script
+					/tmp/script
+				fi
+			fi
+		done
+		umount /mnt
+	fi
+fi
+EOF
+chmod a+x /etc/rc.local
+# }}}
+
+# Set passwords. {{{
+chpasswd <<EOF
+root:reprap
+debian:reprap
+EOF
+sed -i -e 's/^PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
+# }}}
+
+# Set up nameserver. {{{
+echo 'nameserver 8.8.8.8' > /etc/resolv.conf
+# }}}q
+
+echo $HOSTNAME
+
+# Shut down. {{{
+shutdown -h now
+# }}}

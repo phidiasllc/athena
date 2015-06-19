@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Variables that can be set to alter the function
+#FAST=true	# skip file copying and apt update/upgrade.
+#HOSTNAME=...	# override hostname
+
+#IP=beaglebone.local
+IP=192.168.7.2
+
+# Do everything by default.
+FAST=${FAST:-false}
+
+# Pick serial number, check it and increment current.
+cd "`dirname "$0"`"
+if [ ! -v HOSTNAME ] ; then
+	SERIAL=`head -n 1 serial`
+	MAX=`tail -n 1 serial`
+
+	if [ "$SERIAL" -ge "$MAX" ] ; then
+		echo >&2 "Serial number $SERIAL larger than $MAX; please register a new range and record that in 'serial'."
+		exit 1
+	fi
+
+	echo -e "$[$SERIAL+1]\n$MAX" > serial
+fi
+
+# Avoid warnings from ssh, send files and run them.
+ssh-keygen -f ~/.ssh/known_hosts -R $IP
+if ! "$FAST" ; then
+	sshpass -p reprap scp -o "StrictHostKeyChecking no" upgrade.gpg Repetier-Server-0.60.2-Linux.deb debian@$IP:/tmp/
+	sshpass -p reprap scp -o "StrictHostKeyChecking no" -r Repetier-Server debian@$IP:/tmp/
+fi
+sshpass -p reprap scp -o "StrictHostKeyChecking no" setup debian@$IP:
+sshpass -p reprap ssh -o "StrictHostKeyChecking no" debian@$IP sudo ./setup "${HOSTNAME:-athena-$SERIAL}" "$FAST"

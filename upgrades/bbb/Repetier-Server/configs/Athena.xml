@@ -1,0 +1,106 @@
+<printer>
+	<shape>
+		<grid color="#454545" spacing="10"/>
+		
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<circle color="#dddddd" radius="126" x="0" y="0"/>
+	</shape>
+	<general>
+		<name>Athena</name>
+		<slug>Athena</slug>
+		<firmwareName>Repetier-Firmware</firmwareName>
+		<printerVariant>delta</printerVariant>
+		<active>true</active>
+		<fan>true</fan>
+		<tempUpdateEvery>1</tempUpdateEvery>
+		<sdcard>false</sdcard>
+		<softwarePower>false</softwarePower>
+		<defaultVolumetric>false</defaultVolumetric>
+	</general>
+	<connection>
+		<serial>
+			<baudrate>115200</baudrate>
+			<device>/dev/ttyO0</device>
+			<pingPong>false</pingPong>
+			<inputBufferSize>63</inputBufferSize>
+			<communicationTimeout>30</communicationTimeout>
+			<protocol>0</protocol>
+		</serial>
+	</connection>
+	<movement>
+		<xMin>-200</xMin>
+		<xMax>200</xMax>
+		<xHome>0</xHome>
+		<yMin>-200</yMin>
+		<yMax>200</yMax>
+		<yHome>0</yHome>
+		<zMin>0</zMin>
+		<zMax>275</zMax>
+		<zHome>0</zHome>
+		<xyJerk>20</xyJerk>
+		<zJerk>20</zJerk>
+		<timeMultiplier>1</timeMultiplier>
+		<movebuffer>16</movebuffer>
+		<xySpeed max="200">150</xySpeed>
+		<zSpeed max="200">150</zSpeed>
+		<xyPrintAcceleration>3000</xyPrintAcceleration>
+		<xyTravelAcceleration>3000</xyTravelAcceleration>
+		<zPrintAcceleration>3000</zPrintAcceleration>
+		<zTravelAcceleration>3000</zTravelAcceleration>
+		<endstops all="true" x="false" y="false" z="false"/>
+		<G10Speed>50</G10Speed>
+		<G10Distance>3</G10Distance>
+		<G10LongDistance>50</G10LongDistance>
+		<G11Speed>50</G11Speed>
+		<G11ExtraDistance>0</G11ExtraDistance>
+		<G11ExtraLongDistance>0</G11ExtraLongDistance>
+		<G10ZLift>0</G10ZLift>
+	</movement>
+	<extruders>
+		<extruder filamentDiameter="1.75" lastTemp="0" maxTemp="260" num="0">
+			<maxSpeed acceleration="6000" jerk="40" max="20"/>
+			<extrude speed="50"/>
+			<retract speed="50"/>
+			<tempChange cooldownPerSecond="0.5" heatupPerSecond="2"/>
+			<offsets x="0" y="0"/>
+			<temperatures>
+				<temperature value="210">PLA 210</temperature>
+			</temperatures>
+		</extruder>
+	</extruders>
+	<heatedBed cooldownPerSecond="0.02" heatupPerSecond="0.2" installed="false" lastTemp="0" maxTemp="120">
+		<temperatures>
+			<temperature value="50">PLA</temperature>
+		</temperatures>
+	</heatedBed>
+	<quickCommands>
+		<quickCommand name="Limit Switch 0">G28
+G1 X0 Y115 Z0</quickCommand>
+		<quickCommand name="Limit Switch 1">G28
+G1 X99.6 Y-57.5 Z0</quickCommand>
+		<quickCommand name="Limit Switch 2">G28
+G1 X-99.6 Y-57.5 Z0</quickCommand>
+	</quickCommands>
+	<webcam>
+		<method>0</method>
+		<timelapseMethod>0</timelapseMethod>
+		<staticUrl/>
+		<dynamicUrl/>
+		<reloadInterval>3</reloadInterval>
+		<timelapseInterval>10</timelapseInterval>
+	</webcam>
+<scripts/>
+</printer>

@@ -1,0 +1,53 @@
+#!/bin/sh
+
+SUDOER=/etc/sudoers.d/athena-shutdown
+
+echo 'www-data ALL=(root)NOPASSWD:/sbin/shutdown' > "$SUDOER"
+chmod 0440 "$SUDOER"
+
+cat > /usr/lib/cgi-bin/shutdown << EOF
+#!/usr/bin/python
+
+import cgi
+import os
+import socket
+
+f = cgi.FieldStorage()
+hostname = socket.getfqdn()
+
+if f.getfirst('halt'):
+	os.system('sudo shutdown -h now')
+	print('Content-Type: text/html;charset=utf8')
+	print('')
+	print('''\
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Shutting Down %s</title>
+	</head>
+	<body>
+		<h1>Shutting Down %s</h1>
+	</body>
+</html>
+''' % (hostname, hostname))
+else:
+	print('Content-Type: text/html;charset=utf8')
+	print('')
+	print('''\
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Shut Down %s?</title>
+	</head>
+	<body>
+		<h1>Shut Down %s?</title>
+		<form>
+			<input type='hidden' name='halt' value='halt'/>
+			<input type='submit' name='submit' value='Shut Down %s'/>
+		</form>
+	</body>
+</html>
+''' % (hostname, hostname, hostname))
+EOF
+
+chmod a+x /usr/lib/cgi-bin/shutdown
