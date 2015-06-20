@@ -11,8 +11,6 @@ if [ `dpkg --print-architecture` != armhf ] ; then
 fi
 # }}}
 
-systemctl enable apache2.service
-
 # Disable kernel log on /dev/ttyO0. {{{
 sed -i -e 's/console=${console} //' /boot/uboot/uEnv.txt
 # }}}
@@ -76,6 +74,8 @@ EOF
 	apt-get -y install --allow-unauthenticated wijnen-archive-keyring
 	apt-get -y update
 	apt-get -y install dnsmasq
+	apt-get -y install apache2
+	systemctl enable apache2.service
 	dpkg -i Repetier-Server-0.60.2-Linux.deb
 	#apt-get -y install franklin
 # }}}
