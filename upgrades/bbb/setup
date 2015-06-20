@@ -42,6 +42,7 @@ if ! $FAST ; then
 # Remove junk. {{{
 	rm -f /etc/init.d/led_aging.sh
 	apt-get -y remove --purge x11-common
+	apt-get -y remove --purge udhcpd
 	apt-get -y autoremove
 # }}}
 
