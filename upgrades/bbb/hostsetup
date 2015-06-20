@@ -1,6 +1,6 @@
 #!/bin/sh
 #Set up masquerading.
-REMOTE=`ip route | grep 'default via' | cut -f3 -d' '`
+REMOTE=`ip route | grep 'default via' | cut -f5 -d' '`
 iptables --flush -t nat
 iptables -t nat -A POSTROUTING -o $REMOTE -j MASQUERADE
 echo 1 > /proc/sys/net/ipv4/ip_forward
