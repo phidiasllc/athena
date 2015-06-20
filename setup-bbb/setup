@@ -27,6 +27,7 @@ iface eth0 inet static
 	gateway 192.168.76.1
 EOF
 fi
+sed -i -e 's/wired_interface = .*$/wired_interface = None/' /etc/wicd/manager-settings.conf
 # }}}
 
 # Set the default route through USB while this script is running. {{{
