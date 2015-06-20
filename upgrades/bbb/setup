@@ -30,8 +30,7 @@ fi
 # }}}
 
 # Set the default route through USB while this script is running. {{{
-ip route del default
-ip route add default via 192.168.7.1
+ip route replace default via 192.168.7.1
 # }}}
 
 # Allow printer user to use sudo. {{{
@@ -74,9 +73,7 @@ EOF
 # Install new packages. {{{
 	apt-get -y install --allow-unauthenticated wijnen-archive-keyring
 	apt-get -y update
-	apt-get -y install python3
-	apt-get -y install dnsmasq
-	apt-get -y install apache2
+	apt-get -y install python3 dnsmasq apache2
 	systemctl enable apache2.service
 	dpkg -i Repetier-Server-0.60.2-Linux.deb
 	#apt-get -y install franklin
@@ -185,7 +182,7 @@ else:
 		</form>
 	</body>
 </html>
-''' % (hostname, hostname))
+''' % (hostname, hostname, hostname))
 EOF
 
 chmod a+x /usr/lib/cgi-bin/shutdown
