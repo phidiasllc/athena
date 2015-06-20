@@ -26,6 +26,6 @@ EOF
 else
 	echo "interface $iface already enabled"
 fi
-if [ `dpkg -l sshpass | tail -n 1 | cut -b-2` != 'ii' ] ; then
+if [ "`dpkg -l sshpass | tail -n 1 | cut -b-2`" != 'ii' ] ; then
 	apt-get install sshpass
 fi

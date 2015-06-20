@@ -33,6 +33,7 @@ fi
 # }}}
 
 # Set the default route through USB while this script is running. {{{
+ip route del default
 ip route add default via 192.168.7.1
 # }}}
 
@@ -101,6 +102,9 @@ if ! grep -q '^dhcp-range=' /etc/dnsmasq.conf ; then
 fi
 if ! grep -q '^dhcp-option=3' /etc/dnsmasq.conf ; then
 	echo 'dhcp-option=3' >> /etc/dnsmasq.conf
+fi
+if ! grep -q '^dhcp-option=6' /etc/dnsmasq.conf ; then
+	echo 'dhcp-option=6' >> /etc/dnsmasq.conf
 fi
 # }}}
 
