@@ -95,10 +95,9 @@ fi
 # }}}
 
 # Set up dnsmasq. {{{
-if ! grep -q '^dhcp-range=' /etc/dnsmasq.conf ; then
-	echo 'dhcp-range=192.168.76.3,192.168.76.200,12h' >> /etc/dnsmasq.conf
-	echo 'dhcp-range=192.168.7.1,192.168.7.1,10m' >> /etc/dnsmasq.conf
-fi
+sed -i -e '/^dhcp-range=/d' /etc/dnsmasq.conf
+echo 'dhcp-range=192.168.76.3,192.168.76.200,12h' >> /etc/dnsmasq.conf
+echo 'dhcp-range=192.168.7.1,192.168.7.1,10m' >> /etc/dnsmasq.conf
 if ! grep -q '^dhcp-option=3' /etc/dnsmasq.conf ; then
 	echo 'dhcp-option=3' >> /etc/dnsmasq.conf
 fi
