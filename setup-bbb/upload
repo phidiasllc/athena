@@ -32,4 +32,4 @@ if ! "$FAST" ; then
 	sshpass -p reprap scp -o "StrictHostKeyChecking no" -r Repetier-Server debian@$IP:/tmp/
 fi
 sshpass -p reprap scp -o "StrictHostKeyChecking no" setup debian@$IP:
-sshpass -p reprap ssh -o "StrictHostKeyChecking no" debian@$IP sudo ./setup "${HOSTNAME:-athena-$SERIAL}" "$FAST"
+sshpass -p reprap ssh -o "StrictHostKeyChecking no" debian@$IP sudo ./setup "${HOSTNAME:-athena-$SERIAL}" "$FAST" "`date`"
