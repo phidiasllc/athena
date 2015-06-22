@@ -3,7 +3,7 @@
 
 HOSTNAME="$1"
 FAST="$2"
-DATE="$3"
+read DATE
 
 # Only run on beaglebone. {{{
 if [ `dpkg --print-architecture` != armhf ] ; then
