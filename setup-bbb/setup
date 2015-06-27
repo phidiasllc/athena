@@ -3,6 +3,7 @@
 
 HOSTNAME="$1"
 FAST="$2"
+read DATE
 
 # Only run on beaglebone. {{{
 if [ `dpkg --print-architecture` != armhf ] ; then
@@ -10,6 +11,8 @@ if [ `dpkg --print-architecture` != armhf ] ; then
 	exit 1
 fi
 # }}}
+
+date --set "$DATE"
 
 # Disable kernel log on /dev/ttyO0. {{{
 sed -i -e 's/console=${console} //' /boot/uboot/uEnv.txt
