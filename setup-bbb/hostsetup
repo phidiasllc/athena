@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 #Set up masquerading.
 REMOTE=`ip route | grep 'default via' | cut -f5 -d' '`
 iptables --flush -t nat
@@ -20,7 +20,7 @@ fi
 # Enable network over usb.
 if ! grep -q "^iface $iface" /etc/network/interfaces ; then
 	echo >>/etc/network/interfaces <<EOF
-allow-hotplug dhcp
+allow-hotplug $iface
 iface $iface dhcp
 EOF
 else
