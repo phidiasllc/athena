@@ -26,7 +26,7 @@ fi
 
 # Avoid warnings from ssh, send files and run them.
 ssh-keygen -f ~/.ssh/known_hosts -R $IP
-ssh -o 'StrictHostKeyChecking no' root@$IP chpasswd <<EOF
+ssh -o 'StrictHostKeyChecking no' -o 'PasswordAuthentication no' root@$IP chpasswd <<EOF
 root:reprap
 debian:reprap
 EOF
