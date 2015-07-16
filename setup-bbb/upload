@@ -2,7 +2,7 @@
 
 # Variables that can be set to alter the function
 #FAST=true	# skip file copying and apt update/upgrade.
-#HOSTNAME=...	# override hostname
+#NEW_HOSTNAME=...	# override hostname
 
 #IP=beaglebone.local
 IP=192.168.7.2
@@ -12,7 +12,7 @@ FAST=${FAST:-false}
 
 # Pick serial number, check it and increment current.
 cd "`dirname "$0"`"
-if [ ! -v HOSTNAME ] ; then
+if [ ! -v NEW_HOSTNAME ] ; then
 	SERIAL=`head -n 1 serial`
 	MAX=`tail -n 1 serial`
 
@@ -36,4 +36,4 @@ if ! "$FAST" ; then
 	sshpass -p reprap scp -o "StrictHostKeyChecking no" -r Repetier-Server debian@$IP:/tmp/
 fi
 sshpass -p reprap scp -o "StrictHostKeyChecking no" setup debian@$IP:
-date | sshpass -p reprap ssh -o "StrictHostKeyChecking no" debian@$IP sudo ./setup "${HOSTNAME:-athena-$SERIAL}" "$FAST"
+date | sshpass -p reprap ssh -o "StrictHostKeyChecking no" debian@$IP sudo ./setup "${NEW_HOSTNAME:-athena-$SERIAL}" "$FAST"
