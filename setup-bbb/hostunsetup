@@ -1,0 +1,12 @@
+#!/bin/sh
+#Undo masquerading.
+iptables --flush -t nat
+echo 0 > /proc/sys/net/ipv4/ip_forward
+
+iface=eth1
+rules=/lib/udev/rules.d/75-persistent-net-generator.rules
+if grep -q '^[^#]' $rules ; then
+	echo 'net generator rules were not disabled.'
+else
+	sed -i -e 's/^#//' $rules
+fi
