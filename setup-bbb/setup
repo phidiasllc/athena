@@ -83,7 +83,7 @@ EOF
 	apt-get -y update
 	apt-get -y install python3 dnsmasq apache2 avrdude
 	systemctl enable apache2.service
-	dpkg -i Repetier-Server-0.60.2-Linux.deb
+	dpkg -i /tmp/Repetier-Server-0.60.2-Linux.deb
 	#apt-get -y install franklin
 # }}}
 fi
