@@ -12,6 +12,9 @@ if [ `dpkg --print-architecture` != armhf ] ; then
 fi
 # }}}
 
+DEBIAN_FRONTEND=noninteractive
+export DEBIAN_FRONTEND
+
 date --set "$DATE"
 
 # Disable kernel log on /dev/ttyO0. {{{
@@ -74,17 +77,17 @@ EOF
 
 # Upgrade system. {{{
 	apt-get -y update
-	apt-get -y upgrade
+	apt-get --force-confdef -y upgrade
 	apt-get clean
 # }}}
 
 # Install new packages. {{{
-	apt-get -y install --allow-unauthenticated wijnen-archive-keyring
+	apt-get -y install --force-confdef --allow-unauthenticated wijnen-archive-keyring
 	apt-get -y update
-	apt-get -y install python3 dnsmasq apache2 avrdude
+	apt-get -y install --force-confnew python3 dnsmasq apache2 avrdude
 	systemctl enable apache2.service
 	dpkg -i /tmp/Repetier-Server-0.60.2-Linux.deb
-	#apt-get -y install franklin
+	#apt-get -y install --force-confnew franklin
 # }}}
 fi
 
