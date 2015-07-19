@@ -19,7 +19,7 @@ fi
 
 # Enable network over usb.
 if ! grep -q "^iface $iface" /etc/network/interfaces ; then
-	echo >>/etc/network/interfaces <<EOF
+	cat >>/etc/network/interfaces <<EOF
 allow-hotplug $iface
 iface $iface dhcp
 EOF
