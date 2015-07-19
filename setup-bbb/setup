@@ -207,7 +207,7 @@ EOF
 sed -i -e 's/^PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
 # }}}
 
-echo $HOSTNAME
+cat /etc/hostname
 
 # Shut down. {{{
 shutdown -h now
