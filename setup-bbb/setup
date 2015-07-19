@@ -76,6 +76,7 @@ EOF
 # }}}
 
 # Upgrade system. {{{
+	sed -i -e 's/ftp.us.debian.org/lug.mtu.edu/g' /etc/apt/sources.list
 	apt-get -y update
 	apt-get --force-yes -y upgrade
 	apt-get clean
