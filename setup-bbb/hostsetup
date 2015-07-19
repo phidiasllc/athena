@@ -21,7 +21,7 @@ fi
 if ! grep -q "^iface $iface" /etc/network/interfaces ; then
 	cat >>/etc/network/interfaces <<EOF
 allow-hotplug $iface
-iface $iface dhcp
+iface $iface inet dhcp
 EOF
 else
 	echo "interface $iface already enabled"
