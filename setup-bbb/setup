@@ -77,17 +77,17 @@ EOF
 
 # Upgrade system. {{{
 	apt-get -y update
-	apt-get --force-confdef -y upgrade
+	apt-get --force-yes -y upgrade
 	apt-get clean
 # }}}
 
 # Install new packages. {{{
-	apt-get -y install --force-confdef --allow-unauthenticated wijnen-archive-keyring
+	apt-get -y install --force-yes --allow-unauthenticated wijnen-archive-keyring
 	apt-get -y update
-	apt-get -y install --force-confnew python3 dnsmasq apache2 avrdude
+	apt-get -y install --force-yes python3 dnsmasq apache2 avrdude
 	systemctl enable apache2.service
 	dpkg -i /tmp/Repetier-Server-0.60.2-Linux.deb
-	#apt-get -y install --force-confnew franklin
+	#apt-get -y install --force-yes franklin
 # }}}
 fi
 
