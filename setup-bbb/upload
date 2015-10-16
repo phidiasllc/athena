@@ -32,7 +32,7 @@ debian:reprap
 EOF
 sshpass -p reprap ssh -o 'StrictHostKeyChecking no' debian@$IP sudo ip route replace default via 192.168.7.1
 if ! "$FAST" ; then
-	sshpass -p reprap scp -o "StrictHostKeyChecking no" upgrade.gpg Repetier-Server-0.60.2-Linux.deb debian@$IP:/tmp/
+	sshpass -p reprap scp -o "StrictHostKeyChecking no" upgrade.gpg Repetier-Server-0.60.4-Linux.deb debian@$IP:/tmp/
 	sshpass -p reprap scp -o "StrictHostKeyChecking no" -r Repetier-Server debian@$IP:/tmp/
 fi
 sshpass -p reprap scp -o "StrictHostKeyChecking no" setup debian@$IP:
