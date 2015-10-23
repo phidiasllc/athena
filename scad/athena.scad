@@ -121,6 +121,10 @@ d_large_effector_tool_magnet_mount = h_triangle_inner;
 // Bowden sheath dims
 d_175_sheath = 4.8;
 175_bowden = [d_M4_nut, h_M4_nut, d_175_sheath];
+d_300_sheath = 6.55;
+300_bowden = [d_M6_nut, h_M6_nut, d_300_sheath];
+
+bowden = 175_bowden; // set to the diameter of the Bowden sheath desired, defined above
 
 // Bowden sheath quick release fitting dims
 d_quickrelease_threads = 6.4; // M6 threads, but this gives best fit
