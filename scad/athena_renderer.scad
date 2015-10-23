@@ -68,7 +68,7 @@ module render_part(part_to_render) {
 	if (part_to_render == 13) glass_holddown();
 
 	// end effector with built-in mount for hot end, one required for basic platform
-	if (part_to_render == 14) hotend_effector(quickrelease = true, dalekify = false);
+	if (part_to_render == 14) hotend_effector(quickrelease = false, vent = false, dalekify = false);
 
 	// a place to play
 	if (part_to_render == 99) sandbox();

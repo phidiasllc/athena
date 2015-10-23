@@ -861,11 +861,16 @@ module athena_hand_tool_holder(
 
 module hotend_effector(
 	quickrelease = true,
-	dalekify = false
+	dalekify = false,
+	vent = false
 ) {
 	difference() {
 		union() {
-			hotend_mount(dalekify = dalekify, quickrelease = quickrelease);
+			hotend_mount(
+				dalekify = dalekify,
+				quickrelease = quickrelease,
+				vent = vent
+			);
 
 			effector_base(large = false);
 		}
