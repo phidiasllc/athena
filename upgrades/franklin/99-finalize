@@ -1,0 +1,8 @@
+#!/bin/sh
+
+cat > /etc/default/franklin <<EOF
+ATEXIT='sudo shutdown -h now'
+TLS=False
+EOF
+
+shutdown -h now

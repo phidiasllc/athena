@@ -1,0 +1,3 @@
+#!/bin/sh
+rm /var/lib/Repetier-Server/printer/Athena/jobs/*
+shutdown -h now
