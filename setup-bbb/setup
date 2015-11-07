@@ -31,6 +31,8 @@ fi
 # }}}
 
 # Set up eth0. {{{
+sed -i -re 's/wired_interface = .*$/wired_interface = None/' /etc/wicd/manager-settings.conf
+sed -i -re '/\s*(network|gateway)\s/d' /etc/network/interfaces
 if ! grep -q '^iface eth0' /etc/network/interfaces ; then
 	cat >>/etc/network/interfaces <<EOF
 allow-hotplug usb0
@@ -43,7 +45,7 @@ iface eth0 inet static
 	netmask 255.255.255.0
 EOF
 fi
-sed -i -e 's/wired_interface = .*$/wired_interface = None/' /etc/wicd/manager-settings.conf
+
 # }}}
 
 # Set the default route through USB while this script is running. {{{
