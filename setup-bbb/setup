@@ -1,10 +1,15 @@
 #!/bin/sh -x
 # vim: set foldmethod=marker :
 
-exec 2> /tmp/setup-log
+exec 2> /home/debian/setup-log
 HOSTNAME="$1"
 FAST="$2"
+WIJNEN="$3"
 read DATE
+
+if [ "$WIJNEN" ] ; then
+	echo "$WIJNEN	wijnen.dtdns.net" >> /etc/hosts
+fi
 
 # Only run on beaglebone. {{{
 if [ `dpkg --print-architecture` != armhf ] ; then
@@ -49,7 +54,8 @@ fi
 # }}}
 
 # Set the default route through USB while this script is running. {{{
-ip route replace default via 192.168.7.1
+IP=`ip route | grep usb0 | grep / | cut -f1 -d/`
+ip route replace default via ${IP%.*}.1
 # }}}
 
 # Set up nameserver. {{{
@@ -60,7 +66,7 @@ echo 'nameserver 8.8.8.8' > /etc/resolv.conf
 echo 'franklin3d ALL=NOPASSWD:ALL' > /etc/sudoers.d/franklin
 # }}}
 
-if ! $FAST ; then
+if [ "$FAST" = false ] ; then
 # Remove junk. {{{
 	rm -f /etc/init.d/led_aging.sh
 	apt-get -y remove --purge x11-common
@@ -76,7 +82,7 @@ if ! $FAST ; then
 # Set hostname. {{{
 	if grep -q 'beaglebone' /etc/hosts ; then
 		echo $HOSTNAME > /etc/hostname
-		sed -i -e "s/beaglebone/$HOSTNAME/" /etc/hosts
+		sed -i -e "s/^.*beaglebone.*$/127.0.1.1	$HOSTNAME/" /etc/hosts
 	fi
 # }}}
 
@@ -100,7 +106,8 @@ EOF
 	apt-get -y install --force-yes python3 dnsmasq apache2 avrdude
 	systemctl enable apache2.service
 	dpkg -i /tmp/Repetier-Server-0.60.4-Linux.deb
-	#apt-get -y install --force-yes franklin
+	rm -f /etc/default/franklin
+	apt-get -y install --force-yes franklin
 # }}}
 fi
 
@@ -109,12 +116,11 @@ systemctl mask serial-getty@ttyO0.service
 # }}}
 
 # Set up Franklin. {{{
-if ! grep -q '^ATEXIT=' /etc/default/franklin ; then
-	echo "ATEXIT='sudo shutdown -h now'" >> /etc/default/franklin
-fi
-if ! grep -q '^TLS=' /etc/default/franklin ; then
-	echo "TLS=False" >> /etc/default/franklin
-fi
+cat > /etc/default/franklin <<EOF
+AUTODETECT=False
+TEXIT='sudo shutdown -h now'
+TLS=False
+EOF
 # }}}
 
 # Set up dnsmasq. {{{
@@ -220,6 +226,8 @@ debian:reprap
 EOF
 sed -i -e 's/^PermitRootLogin .*$/PermitRootLogin no/' /etc/ssh/sshd_config
 # }}}
+
+sed -i -e '/wijnen.dtdns.net/d' /etc/hosts
 
 cat /etc/hostname
 

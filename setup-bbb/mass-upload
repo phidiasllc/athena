@@ -1,0 +1,56 @@
+#!/bin/bash -x
+
+cd "`dirname "$0"`"
+REMOTE_DEV=usb0
+FIRST_ID=100
+
+DEVS=`ip link | grep ' enx' | cut -f2 -d:`
+test "$DEVS" || exit 0
+
+ID=$FIRST_ID
+for DEV in $DEVS ; do
+	ip link set $DEV up
+	ip addr add dev $DEV 192.168.7.1
+	ip route add 192.168.7.0/24 dev $DEV
+
+	ssh-keygen -f ~/.ssh/known_hosts -R 192.168.7.2
+	sshpass -preprap ssh -o 'StrictHostKeyChecking no' root@192.168.7.2 "ip addr del 192.168.7.2/30 dev $REMOTE_DEV; ip route del 192.168.7.0/30 dev $REMOTE_DEV; ip route del default; ip link set $REMOTE_DEV up; ip addr add 192.168.${ID}.2 dev $REMOTE_DEV; ip route add 192.168.${ID}.0/24 dev $REMOTE_DEV; ip route add default via 192.168.${ID}.1" &
+
+	sleep 10
+
+	ip addr del dev $DEV 192.168.7.1/32
+	ip route del 192.168.7.0/24 dev $DEV
+	ip addr add dev $DEV 192.168.${ID}.1
+	ip route add 192.168.${ID}.0/24 dev $DEV
+	ip link set $DEV up
+	ID=$[$ID + 1]
+done
+
+test "$SUDO_USER" || SUDO_USER=work
+ID=$FIRST_ID
+for DEV in $DEVS ; do
+	SERIAL=`head -n 1 serial`
+	MAX=`tail -n 1 serial`
+
+	if [ "$SERIAL" -ge "$MAX" ] ; then
+		echo >&2 "Serial number $SERIAL larger than $MAX; please register a new range and record that in 'serial'."
+		exit 1
+	fi
+
+	echo -e "$[$SERIAL+1]\n$MAX" > serial
+
+	NEW_HOSTNAME="athena-$SERIAL" su "$SUDO_USER" ./upload "192.168.${ID}.2" &
+	sleep 1	# Make sure they don't all edit known_hosts at the same time.
+	ID=$[$ID + 1]
+done
+
+echo 'Please press enter when all beaglebones have powered down.'
+read junk
+
+ID=$FIRST_ID
+for DEV in $DEVS ; do
+	ip addr del dev $DEV 192.168.${ID}.1/32
+	ip route del 192.168.${ID}.0/24 dev $DEV
+	ip link set $DEV down
+	ID=$[$ID + 1]
+done

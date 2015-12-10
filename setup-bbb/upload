@@ -5,10 +5,16 @@
 #NEW_HOSTNAME=...	# override hostname
 
 #IP=beaglebone.local
-IP=192.168.7.2
+IP=$1
 
 # Do everything by default.
 FAST=${FAST:-false}
+
+if grep wijnen.dtdns.net /etc/hosts | grep -q 127.0.1.1 ; then
+	WIJNEN="${IP%.*}.1"
+else
+	WIJNEN=""
+fi
 
 # Pick serial number, check it and increment current.
 cd "`dirname "$0"`"
@@ -30,10 +36,9 @@ ssh -o 'StrictHostKeyChecking no' -o 'PasswordAuthentication no' root@$IP chpass
 root:reprap
 debian:reprap
 EOF
-sshpass -p reprap ssh -o 'StrictHostKeyChecking no' debian@$IP sudo ip route replace default via 192.168.7.1
-if ! "$FAST" ; then
+if [ "$FAST" = false ] ; then
 	sshpass -p reprap scp -o "StrictHostKeyChecking no" upgrade.gpg Repetier-Server-0.60.4-Linux.deb debian@$IP:/tmp/
 	sshpass -p reprap scp -o "StrictHostKeyChecking no" -r Repetier-Server debian@$IP:/tmp/
 fi
 sshpass -p reprap scp -o "StrictHostKeyChecking no" setup debian@$IP:
-date | sshpass -p reprap ssh -o "StrictHostKeyChecking no" debian@$IP sudo ./setup "${NEW_HOSTNAME:-athena-$SERIAL}" "$FAST"
+date | sshpass -p reprap ssh -o "StrictHostKeyChecking no" debian@$IP sudo ./setup "${NEW_HOSTNAME:-athena-$SERIAL}" "$FAST" "$WIJNEN"
