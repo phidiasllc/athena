@@ -5,7 +5,7 @@
 #NEW_HOSTNAME=...	# override hostname
 
 #IP=beaglebone.local
-IP=IP=${1:-192.168.7.2}
+IP=${1:-192.168.7.2}
 
 # Do everything by default.
 FAST=${FAST:-false}
