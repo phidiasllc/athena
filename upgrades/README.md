@@ -2,9 +2,9 @@
 Upgrading requires a USB thumbdrive:
 <ol>
 <li>Connect a USB thumbdrive to your computer</li>
-<li>Download both files having the smae name (e.g. clean_jobs and clean_jobs.sig) into the root of the thumbdrive</li>
+<li>Download the file(s) to install to the root of your thumbdrive.</li>
 <ol>
-<li>Click on the desired file in the above list</l1>
+<li>Click on the desired file in the above list</li>
 <li>In right-click the button labled "Raw" in the page and select "Save link as..."</li>
 <li>navigate to the location you wish to store the file</li>
 </ol>

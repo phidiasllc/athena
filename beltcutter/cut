@@ -1,0 +1,37 @@
+#!/usr/bin/python3
+
+import websocketd
+
+p = websocketd.RPC(8000, tls = False)
+p.set_printer(None, [port for port in p.get_ports() if port.startswith('/dev/ttyACM')][0])
+
+print('Please lower the knife to its bottom position and place the belt against it, then press enter.')
+input()
+p.home()
+
+knife = 0
+drive = 1
+
+up = -10
+length = 1350
+
+num = 0
+wait = 0
+while True:
+	if wait <= 0:
+		print('prepare for cut %d; enter number to prevent waits' % num)
+		w = input()
+		if w.strip() != '':
+			wait = int(w)
+		else:
+			wait = 1
+	wait -= 1
+	# Lift knife
+	p.line_cb([{knife: up}])
+	# Move belt
+	p.line_cb([{drive: length}], relative = True)
+	# Lower knife
+	p.line_cb([{knife: 0}])
+	# Report
+	num += 1
+	print('cuts to do: %d; total done: %d' % (wait, num))
