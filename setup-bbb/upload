@@ -10,12 +10,6 @@ IP=${1:-192.168.7.2}
 # Do everything by default.
 FAST=${FAST:-false}
 
-if grep wijnen.dtdns.net /etc/hosts | grep -q 127.0.1.1 ; then
-	WIJNEN="${IP%.*}.1"
-else
-	WIJNEN=""
-fi
-
 # Pick serial number, check it and increment current.
 cd "`dirname "$0"`"
 if [ ! -v NEW_HOSTNAME ] ; then
@@ -41,4 +35,4 @@ if [ "$FAST" = false ] ; then
 	sshpass -p reprap scp -o "StrictHostKeyChecking no" -r Repetier-Server debian@$IP:/tmp/
 fi
 sshpass -p reprap scp -o "StrictHostKeyChecking no" setup debian@$IP:
-date | sshpass -p reprap ssh -o "StrictHostKeyChecking no" debian@$IP sudo ./setup "${NEW_HOSTNAME:-athena-$SERIAL}" "$FAST" "$WIJNEN"
+date | sshpass -p reprap ssh -o "StrictHostKeyChecking no" debian@$IP sudo ./setup "${NEW_HOSTNAME:-athena-$SERIAL}" "$FAST"

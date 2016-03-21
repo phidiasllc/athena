@@ -1,7 +1,0 @@
-#!/bin/sh
-
-ip route del default
-dpkg --purge repetier-server
-dpkg --purge python-websockets
-sed -i -e 's/apt-get update -f/#apt-get install -f/' /etc/rc.local
-rm /etc/default/franklin

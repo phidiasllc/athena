@@ -1,16 +1,6 @@
 #!/bin/sh -x
 # vim: set foldmethod=marker :
 
-exec 2> /home/debian/setup-log
-HOSTNAME="$1"
-FAST="$2"
-WIJNEN="$3"
-read DATE
-
-if [ "$WIJNEN" ] ; then
-	echo "$WIJNEN	wijnen.dtdns.net" >> /etc/hosts
-fi
-
 # Only run on beaglebone. {{{
 if [ `dpkg --print-architecture` != armhf ] ; then
 	echo >&2 "This script should not run on the host.  Run upload instead"
@@ -18,20 +8,38 @@ if [ `dpkg --print-architecture` != armhf ] ; then
 fi
 # }}}
 
-DEBIAN_FRONTEND=noninteractive
-export DEBIAN_FRONTEND
-
+exec 2> /home/debian/setup-log
+HOSTNAME="$1"
+FAST="$2"
+read DATE
 date --set "$DATE"
 
-# Disable kernel log on /dev/ttyO0. {{{
+DEBIAN_FRONTEND=noninteractive
+export DEBIAN_FRONTEND
+# Set proxy for faster download.
+http_proxy='http://192.168.7.1:3142'
+export http_proxy
+
+# Disable kernel log on /dev/ttyO0 for Black, enable cape-universal for Green. {{{
+systemctl mask serial-getty@ttyO0.service
 if [ -f /boot/uboot/uEnv.txt ] ; then
 	sed -i -e 's/console=${console} //' /boot/uboot/uEnv.txt
 elif [ -f /boot/uEnv.txt ] ; then
-	if ! grep -q console /boot/uEnv.txt ; then
+	sed -i -e 's/^cape_enable=.*$/cape_enable=capemgr.enable_partno=cape-universal,cape-univ-hdmi/' /boot/uEnv.txt
+	if ! grep -q '^console=' /boot/uEnv.txt ; then
 		echo 'console=ttyO2,115200n8' >> /boot/uEnv.txt
 	fi
 else
 	echo >&2 'No uEnv.txt found!'
+fi
+# }}}
+
+# Allow hotplug on usb. {{{
+if ! grep -q '^auto usb0' /etc/network/interfaces ; then
+	cat >>/etc/network/interfaces <<EOF
+allow-hotplug usb0
+auto usb0
+EOF
 fi
 # }}}
 
@@ -40,8 +48,6 @@ sed -i -re 's/wired_interface = .*$/wired_interface = None/' /etc/wicd/manager-s
 sed -i -re '/\s*(network|gateway)\s/d' /etc/network/interfaces
 if ! grep -q '^iface eth0' /etc/network/interfaces ; then
 	cat >>/etc/network/interfaces <<EOF
-allow-hotplug usb0
-auto usb0
 
 allow-hotplug eth0
 auto eth0
@@ -50,7 +56,6 @@ iface eth0 inet static
 	netmask 255.255.255.0
 EOF
 fi
-
 # }}}
 
 # Set the default route through USB while this script is running. {{{
@@ -69,8 +74,7 @@ echo 'franklin3d ALL=NOPASSWD:ALL' > /etc/sudoers.d/franklin
 if [ "$FAST" = false ] ; then
 # Remove junk. {{{
 	rm -f /etc/init.d/led_aging.sh
-	apt-get -y remove --purge x11-common
-	apt-get -y remove --purge udhcpd
+	apt-get -y remove --purge modemmanager gnome udhcpd lightdm xserver-xorg lxde
 	apt-get -y autoremove
 # }}}
 
@@ -88,37 +92,38 @@ if [ "$FAST" = false ] ; then
 
 # Add Franklin's repository to sources.list. {{{
 	cat > /etc/apt/sources.list.d/franklin.list <<EOF
-deb http://wijnen.dtdns.net/archive wheezy/all/
-deb http://wijnen.dtdns.net/archive wheezy/armhf/
+deb http://wijnen.dtdns.net/archive sid/all/
+deb http://wijnen.dtdns.net/archive sid/armhf/
 EOF
 # }}}
 
 # Upgrade system. {{{
-	sed -i -e 's/ftp.us.debian.org/lug.mtu.edu/g' /etc/apt/sources.list
+	sed -i -e 's/wheezy/jessie/g' /etc/apt/sources.list
 	apt-get -y update
-	apt-get --force-yes -y upgrade
+	yes | apt-get --force-yes -y upgrade
 	apt-get clean
 # }}}
+
+# Disable webserver.
+systemctl disable bonescript.socket
+systemctl disable bonescript.service
+systemctl stop bonescript.socket
+systemctl stop bonescript.service
 
 # Install new packages. {{{
 	apt-get -y install --force-yes --allow-unauthenticated wijnen-archive-keyring
 	apt-get -y update
-	apt-get -y install --force-yes python3 dnsmasq apache2 avrdude
+	yes | apt-get -y install --force-yes python3 dnsmasq apache2 avrdude
 	systemctl enable apache2.service
 	dpkg -i /tmp/Repetier-Server-0.60.4-Linux.deb
 	rm -f /etc/default/franklin
-	apt-get -y install --force-yes franklin
+	yes | apt-get -y install --force-yes franklin
 # }}}
 fi
-
-# Disable login on /dev/ttyO0. {{{
-systemctl mask serial-getty@ttyO0.service
-# }}}
 
 # Set up Franklin. {{{
 cat > /etc/default/franklin <<EOF
 AUTODETECT=False
-TEXIT='sudo shutdown -h now'
 TLS=False
 EOF
 # }}}
@@ -126,6 +131,7 @@ EOF
 # Set up dnsmasq. {{{
 if [ -f /etc/dnsmasq.conf ] ; then
 	sed -i -e '/^dhcp-range=/d' /etc/dnsmasq.conf
+	echo >> /etc/dnsmasq.conf
 	echo 'dhcp-range=192.168.76.3,192.168.76.200,12h' >> /etc/dnsmasq.conf
 	echo 'dhcp-range=192.168.7.1,192.168.7.1,10m' >> /etc/dnsmasq.conf
 	if ! grep -q '^dhcp-option=3' /etc/dnsmasq.conf ; then
@@ -140,7 +146,8 @@ fi
 # Set up auto-upgrade from usb storage. {{{
 cat > /etc/rc.local <<EOF
 #!/bin/sh
-ip route replace default via 192.168.7.1
+config-pin P9_11 uart
+config-pin P9_13 uart
 sleep 10
 if [ -b /dev/sda1 ] ; then
 	if mount /dev/sda1 /mnt ; then
@@ -151,7 +158,7 @@ if [ -b /dev/sda1 ] ; then
 			if gpg --ignore-time-conflict --keyring /root/upgrade.gpg --no-default-keyring --verify "\$i" "\$target" ; then
 				if [ "\${target%.deb}" != "\$target" ] ; then
 					dpkg -i "\$target"
-					apt-get install -f
+					yes | apt-get install -f
 				else
 					cp "\$target" /tmp/script
 					chmod a+x /tmp/script
@@ -226,8 +233,6 @@ debian:reprap
 EOF
 sed -i -e 's/^PermitRootLogin .*$/PermitRootLogin no/' /etc/ssh/sshd_config
 # }}}
-
-sed -i -e '/wijnen.dtdns.net/d' /etc/hosts
 
 cat /etc/hostname
 

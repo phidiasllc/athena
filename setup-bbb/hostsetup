@@ -5,27 +5,9 @@ iptables --flush -t nat
 iptables -t nat -A POSTROUTING -o $REMOTE -j MASQUERADE
 echo 1 > /proc/sys/net/ipv4/ip_forward
 
-iface=eth1
-# Comment this entire file out.
-rules=/lib/udev/rules.d/75-persistent-net-generator.rules
-# Remove $iface from here.
-rules2=/etc/udev/rules.d/70-persistent-net.rules
-if grep -q '^[^#]' $rules ; then
-	sed -i -e 's/^/#/' $rules
-	sed -i -e '/$iface/d' $rules2
-else
-	echo 'net generator rules were already disabled.'
-fi
-
-# Enable network over usb.
-if ! grep -q "^iface $iface" /etc/network/interfaces ; then
-	cat >>/etc/network/interfaces <<EOF
-allow-hotplug $iface
-iface $iface inet dhcp
-EOF
-else
-	echo "interface $iface already enabled"
-fi
 if [ "`dpkg -l sshpass | tail -n 1 | cut -b-2`" != 'ii' ] ; then
 	apt-get install sshpass
+fi
+if [ "`dpkg -l apt-cacher-ng | tail -n 1 | cut -b-2`" != 'ii' ] ; then
+	apt-get install apt-cacher-ng
 fi
