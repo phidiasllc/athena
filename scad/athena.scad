@@ -22,10 +22,18 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 // requires the common delta modules
 include <simple_delta_common.scad>
 
-echo_dims = false; // set to true to echo pertinent dimensions - will repeat some
-
 /************  layer_height is important - set it to the intended print layer height  ************/
 layer_height = 0.33; // layer height that the print will be produced with
+
+// Bowden sheath dims
+d_175_sheath = 4.8;
+175_bowden = [d_M4_nut, h_M4_nut, d_175_sheath];
+d_300_sheath = 6.55;
+300_bowden = [d_M6_nut, h_M6_nut, d_300_sheath];
+
+bowden = 175_bowden; // set to the diameter of the Bowden sheath desired, defined above
+
+echo_dims = false; // set to true to echo pertinent dimensions - will repeat some
 
 // [w, l, t] = [y, x, z]
 $fn = 48;
@@ -40,7 +48,7 @@ cc_idler_mounts = 120; // c-c of mounts on idler end - large to maximize x-y tra
 cc_motor_mounts = 75; // c-c of mounts on idler end
 
 // printer dims
-r_printer = 175; // radius of the printer - typically 175
+r_printer = 175; // radius of the printer, distance from printer center to guide rod centers - typically 175
 l_tie_rod = 250; // length of the tie rods - typically 250
 l_guide_rods = 595; // length of the guide rods - only used for assembly
 
@@ -64,7 +72,7 @@ offset_idler = (od_idler - d_pulley) / 2 + belt[2]; // amount to offset idler be
 
 // guide rod and clamp dims
 cc_guides = 60; // center-to-center of the guide rods
-d_guides = 8.3;//8.5; // diameter of the guide rods
+d_guides = 8.3; // diameter of the guide rods - a little big for clearance
 pad_clamp = 8; // additional material around guide rods
 gap_clamp = 2; // opening for clamp
 
@@ -103,10 +111,11 @@ r_pad_carriage_magnet_mount = 2;
 r_pad_effector_magnet_mount = 2;
 
 // effector dims
-l_effector = 60; // this needs to be played with to keep the fan from hitting the tie rods
+// l_effector needs to be played with to keep the fan from hitting the tie rods
+l_effector = 60; // cc of tie rod bearings on effector
 h_effector = equilateral_height_from_base(l_effector);
-r_effector = l_effector * tan(30) / 2 + 11;
-t_effector = 6;
+r_effector = l_effector * tan(30) / 2 + 11; // radius of the magnet mounts
+t_effector = 6; // thickness of the effector base
 h_triangle_inner = h_effector + 12;
 r_triangle_middle = equilateral_base_from_height(h_triangle_inner) * tan(30) / 2;
 
@@ -118,20 +127,12 @@ d_small_effector_tool_magnet_mount = 1 + d_small_effector_tool_mount + od_magnet
 d_large_effector_tool_mount = 50;
 d_large_effector_tool_magnet_mount = h_triangle_inner;
 
-// Bowden sheath dims
-d_175_sheath = 4.8;
-175_bowden = [d_M4_nut, h_M4_nut, d_175_sheath];
-d_300_sheath = 6.55;
-300_bowden = [d_M6_nut, h_M6_nut, d_300_sheath];
-
-bowden = 175_bowden; // set to the diameter of the Bowden sheath desired, defined above
-
 // Bowden sheath quick release fitting dims
 d_quickrelease_threads = 6.4; // M6 threads, but this gives best fit
 l_quickrelease_threads = 5; // length of threads on quick release
 pitch_quickrelease_threads = 1;
-d_quickrelease = 12; // diamter of the hex portion for counter-sinking quick release into hot end tool
-countersink_quickrelease = 6; // depth to contersink quick release fitting into hot end tool
+d_quickrelease = 12; // diameter of the hex portion for counter-sinking quick release into hot end tool
+countersink_quickrelease = 6; // depth to contersink quick release fitting into hot end tool when not headless
 
 // hot end dims
 pad_jhead = 8; // this is added to the diameter of the cage to permit clearance for the hotend
@@ -464,73 +465,61 @@ module athena_basic_carriage() {
 			translate([0, 0, -h_carriage])
 				cube([2 * cc_guides, 4 * (od_lm8uu + 6), h_carriage], center = true);
 		}
-
-	// floor for rod opening
-	for (i = [-1, 1])
-		translate([i * cc_guides / 2, -0.35, (l_lm8uu + layer_height) / 2])
-			cube([od_lm8uu, id_lm8uu, layer_height], center = true);
 	}
 }
 
 // athena_convertible_carriage is required if the platform will be used in fixed tool mode
-module athena_convertible_carriage() {
-	union() {
-		difference() {
-			union() {
-				carriage_body();
+module athena_convertible_carriage(linear_bearing = bearing_lm8uu) {
+	difference() {
+		union() {
+			carriage_body(linear_bearing = linear_bearing);
 
-				// magnet mounts
+			// magnet mounts
+			for (i = [-1, 1])
+				translate([i * l_effector / 2, -carriage_offset, stage_mount_pad + h_carriage_magnet_mount / sin(tie_rod_angle)])
+					rotate([90 - tie_rod_angle, 0, 0])
+						magnet_mount(r_pad = r_pad_carriage_magnet_mount, h_pad = h_carriage_magnet_mount);
+
+			mirror([0, 0, 1])
 				for (i = [-1, 1])
 					translate([i * l_effector / 2, -carriage_offset, stage_mount_pad + h_carriage_magnet_mount / sin(tie_rod_angle)])
-						rotate([90 - tie_rod_angle, 0, 0])
+						rotate([90 - tie_rod_angle, 0, 0]) {
 							magnet_mount(r_pad = r_pad_carriage_magnet_mount, h_pad = h_carriage_magnet_mount);
 
-				mirror([0, 0, 1])
-					for (i = [-1, 1])
-						translate([i * l_effector / 2, -carriage_offset, stage_mount_pad + h_carriage_magnet_mount / sin(tie_rod_angle)])
-							rotate([90 - tie_rod_angle, 0, 0]) {
-								magnet_mount(r_pad = r_pad_carriage_magnet_mount, h_pad = h_carriage_magnet_mount);
+							// support for printing the mounts
+							translate([0, 0, (h_magnet + h_carriage_magnet_mount) / 2 - r_bearing_seated + 0.25])
+								difference() {
+									cylinder(r = od_magnet / 2 + r_pad_carriage_magnet_mount, h = h_magnet + h_carriage_magnet_mount, center = true);
 
-								// support for printing the mounts
-								translate([0, 0, (h_magnet + h_carriage_magnet_mount) / 2 - r_bearing_seated + 0.25])
-									difference() {
-										cylinder(r = od_magnet / 2 + r_pad_carriage_magnet_mount, h = h_magnet + h_carriage_magnet_mount, center = true);
+									cylinder(r = od_magnet / 2, h = h_magnet + h_carriage_magnet_mount, center = true);
+								}
+					}
 
-										cylinder(r = od_magnet / 2, h = h_magnet + h_carriage_magnet_mount, center = true);
-									}
-						}
+			// add a protrusion for making the vertical board-mounted directional limit switch
+			translate([d_pulley / 2 + x_pass / 2 + 5, y_web - 7.5, 0]) // offset it from the belt terminator mount point
+				rotate([0, 90, 0])
+					intersection() {
+						cylinder(r = h_carriage / 2, h = 7, center = true);
 
-				// add a protrusion for making the vertical board-mounted directional limit switch
-				translate([d_pulley / 2 + x_pass / 2 + 5, y_web - 7.5, 0]) // offset it from the belt terminator mount point
-					rotate([0, 90, 0])
-						intersection() {
-							cylinder(r = h_carriage / 2, h = 7, center = true);
-
-							translate([0, h_carriage / 2 - y_web - 2, 0])
-								cube([h_carriage, h_carriage, 11], center = true);
-						}
-			}
-
-			for (i = [-1, 1])
-				translate([i * cc_guides / 2, 0, 0])
-					carriage_wire_tie_relief();
-
-			carriage_bearing_relief();
-
-			// belt terminator mount
-			translate([d_pulley / 2, y_web, h_carriage / 2 - d_M3_screw / 2 - 5])
-				rotate([90, 0, 0])
-					cylinder(r = d_M3_screw / 2, h = w_carriage_web + 2, center = true);
-
-			// flatten the bottom
-			translate([0, 0, -h_carriage])
-				cube([2 * cc_guides, 4 * (od_lm8uu + 6), h_carriage], center = true);
+						translate([0, h_carriage / 2 - y_web - 2, 0])
+							cube([h_carriage, h_carriage, 11], center = true);
+					}
 		}
 
-	// floor for rod opening
-	for (i = [-1, 1])
-		translate([i * cc_guides / 2, -0.35, (l_lm8uu + layer_height) / 2])
-			cube([od_lm8uu, id_lm8uu, layer_height], center = true);
+		for (i = [-1, 1])
+			translate([i * cc_guides / 2, 0, 0])
+				carriage_wire_tie_relief(linear_bearing = linear_bearing);
+
+		carriage_bearing_relief(linear_bearing = linear_bearing);
+
+		// belt terminator mount
+		translate([d_pulley / 2, y_web, h_carriage / 2 - d_M3_screw / 2 - 5])
+			rotate([90, 0, 0])
+				cylinder(r = d_M3_screw / 2, h = w_carriage_web + 2, center = true);
+
+		// flatten the bottom
+		translate([0, 0, -h_carriage])
+			cube([2 * cc_guides, 4 * (linear_bearing[0] + 6), h_carriage], center = true);
 	}
 }
 
@@ -678,7 +667,7 @@ module athena_spool_holder(
 	// spool holder to mount to vertical board
 	l_mount = 28;
 	w_mount = 24;
-	h_mount = (mount_wood) ? 25 : 8;
+	h_mount = (mount_wood) ? 25 : 12;
 	l_holder = 110;
 	w_holder = 20;
 	h_holder = 12;
@@ -699,9 +688,14 @@ module athena_spool_holder(
 								d_wire_guide = 12.2,
 								wire_guide_offset = 5);
 					else
-						cube([l_mount, w_mount, h_mount], center = true);
+						difference() {
+							cube([l_mount, w_member + 8, h_mount], center = true);
 
-					translate([-1, 3, (h_pivot + h_mount) / 2 + 0.5])
+							translate([0, 0, -4])
+								cube([l_mount + 1, w_member, 6], center = true);
+						}
+
+					translate([-1, -3, (h_pivot + h_mount) / 2 + 0.5])
 						difference() {
 							cylinder(r = d_pivot / 2, h = h_pivot + 1, center = true);
 
@@ -712,32 +706,32 @@ module athena_spool_holder(
 						}
 				}
 
-				translate([-1, 3, h_mount / 2 - 5])
+				translate([-1, -3, h_mount / 2 - 5])
 					intersection() {
 						rotate_extrude(convexity = 10)
-							translate([9, 0, 0])
-								square([7, 6]);
+							translate([8, 0, 0])
+								square([10, 6]);
 
-						rotate([0, 0, 20])
-							translate([-l_mount / 2, w_mount / 2, 5])
-								cube([35, 17, 10], center = true);
+						rotate([0, 0, 800])
+							translate([-l_mount / 2 + 6, w_mount / 2, 5])
+								cube([20, 27, 10], center = true);
 					}
 
 				if (mount_wood)
-					translate([0, w_mount / 2, -h_mount / 2 + 5])
+					translate([0, -w_mount / 2, -h_mount / 2 + 5])
 						rotate([90, 0, 0])
-							translate([0, 0, 2])
+							translate([0, 0, -2])
 								for (i = [-1, 1])
 									translate([i * 8, 0, 0])
 										cylinder(r = 2, h = 10, center = true);
-//				else {
-//					translate([-0.5, 0, h_mount / 2 ]) {
-//						cylinder(r = d_M3_screw / 2, h = h_mount + h_pivot + 3, center = true);
+				else {
+					translate([-1, 3, -1 + layer_height])
+						cylinder(r = d_M3_screw / 2, h = h_mount + h_pivot + 3);
 
 //						translate([0, 0, h_pivot])
 //							cylinder(r = d_M3_cap / 2, h = h_M3_cap + 1, center = true);
 //					}
-//				}
+				}
 			}
 
 	if (render_holder)
@@ -862,21 +856,36 @@ module athena_hand_tool_holder(
 module hotend_effector(
 	quickrelease = true,
 	dalekify = false,
-	vent = false
+	vent = false,
+	headless = false
 ) {
 	difference() {
 		union() {
 			hotend_mount(
 				dalekify = dalekify,
 				quickrelease = quickrelease,
-				vent = vent
+				vent = vent,
+				headless = headless
 			);
 
 			effector_base(large = false);
 		}
 
-		cylinder(r1 = r1_opening, r2 = r2_opening, h = 7, center = true);
+		// opening at bottom
+		translate([0, 0, 0])
+			cylinder(r1 = r1_opening, r2 = r2_opening, h = t_effector + 0.1, center = true);
+
+		translate([0, 0, -t_effector / 2 - 1])
+			rotate([0, 0, 60])
+				effector_shroud_holes(diameter = d_M3_screw / 2 - 0.15, height = t_effector + 1 - 2 * layer_height);
 	}
+}
+
+module effector_shroud_holes(diameter, height) {
+		for (i = [0:2])
+			rotate([0, 0, i * 120])
+				translate([0, r2_opening + 4, 0])
+					cylinder(r = diameter, h = height);
 }
 
 module glass_holddown() {
@@ -941,5 +950,258 @@ module thumbscrew_quickrelease() {
 		}
 
 		cylinder(r = r_hex, h = h_wrench + 1, center = true, $fn = points);
+	}
+}
+
+module bbb_melzi_mount(
+	render_small = true,
+	render_large = true
+) {
+	// width is short dimension, length is long dimension
+	cc_w_melzi_mounts = 45.75 - 3.75; // c-c of melzi mounts on width axis
+	cc_l_melzi_mounts = 200; // c-c of melzi mounts on length axis
+	offset_melzi_mounts = 3.75 / 2 + 2; // distance from edge of board
+	w_melzi = 50;
+	w_bbb = 54.5;
+	l_bbb = 86.3;
+	bbb_melzi_offset = -20;
+	h_standoff = 9;
+
+	if (render_large)
+		union() {
+			// melzi
+			translate([bbb_melzi_offset, -w_melzi, 0]) {
+				difference() {
+					union() {
+						for (i = [-1, 1])
+								translate([offset_melzi_mounts, i * cc_w_melzi_mounts / 2 + w_melzi / 2, 0])
+									cylinder(r1 = d_M3_screw / 2 + 3, r2 = d_M3_screw / 2 + 1, h = h_standoff, center = true);
+
+						translate([0, 0, 1 - h_standoff / 2]) {
+							hull(){
+								translate([offset_melzi_mounts, -cc_w_melzi_mounts / 2 + w_melzi / 2, 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+
+								translate([-bbb_melzi_offset + bbb_hole1[0], w_melzi + bbb_hole1[1], 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+							}
+
+							hull(){
+								translate([offset_melzi_mounts, -cc_w_melzi_mounts / 2 + w_melzi / 2, 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+
+								translate([offset_melzi_mounts, cc_w_melzi_mounts / 2 + w_melzi / 2, 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+							}
+
+							hull(){
+								translate([offset_melzi_mounts, cc_w_melzi_mounts / 2 + w_melzi / 2, 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+
+								translate([-bbb_melzi_offset + bbb_hole0[0], w_melzi + bbb_hole0[1], 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+							}
+
+							hull(){
+								translate([offset_melzi_mounts, -cc_w_melzi_mounts / 2 + w_melzi / 2, 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+
+								translate([-bbb_melzi_offset + bbb_hole0[0], w_melzi + bbb_hole0[1], 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+							}
+
+							hull(){
+								translate([-bbb_melzi_offset + bbb_hole0[0], w_melzi + bbb_hole0[1], 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+
+								translate([-bbb_melzi_offset + bbb_hole1[0], w_melzi + bbb_hole1[1], 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+							}
+
+							hull(){
+								translate([-bbb_melzi_offset + bbb_hole1[0], w_melzi + bbb_hole1[1], 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+
+								translate([-bbb_melzi_offset + bbb_hole2[0], w_melzi + bbb_hole2[1], 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+							}
+
+							hull(){
+								translate([-bbb_melzi_offset + bbb_hole0[0], w_melzi + bbb_hole0[1], 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+
+								translate([-bbb_melzi_offset + bbb_hole2[0], w_melzi + bbb_hole2[1], 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+							}
+
+							translate([4, w_melzi / 2, 0])
+								hull()
+									for (i = [0, -10])
+										translate([i, 0, 0])
+											cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+
+
+							translate([-bbb_melzi_offset + bbb_hole1[0], w_melzi + bbb_hole2[1] - (bbb_hole2[1] - bbb_hole1[1]) / 2, 0])
+								hull()
+									for (i = [0, 10])
+										translate([i, 0, 0])
+											cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+
+						}
+					}
+
+					for (i = [-1, 1])
+						translate([offset_melzi_mounts, i * cc_w_melzi_mounts / 2 + w_melzi / 2, 0])
+							cylinder(r = d_M3_screw / 2 - 0.25, h = h_standoff + 1, center = true);
+
+					translate([-6, w_melzi / 2, 0])
+						cylinder(r = d_M3_screw / 2, h = h_standoff + 1, center = true);
+
+					translate([-bbb_melzi_offset + bbb_hole1[0] + 10, w_melzi + bbb_hole2[1] - (bbb_hole2[1] - bbb_hole1[1]) / 2, 0])
+						cylinder(r = d_M3_screw / 2, h = h_standoff + 1, center = true);
+				}
+			}
+
+			// bbb
+			difference() {
+				for (i = [0:2])
+					translate([bbb_holes[i][0], bbb_holes[i][1], 0])
+						cylinder(r1 = d_M3_screw / 2 + 3, r2 = d_M3_screw / 2 + 1, h = h_standoff, center = true);
+
+				for (i = [0:3])
+					translate([bbb_holes[i][0], bbb_holes[i][1], 0])
+						cylinder(r = d_M3_screw / 2 - 0.25, h = h_standoff + 1, center = true);
+			}
+		}
+
+	if (render_small)
+		// for the opposite end of the melzi:
+		translate([w_melzi / 2, 20, 0])
+			rotate([0, 0, 90])
+				difference() {
+					union() {
+						for (i = [-1, 1])
+							translate([offset_melzi_mounts, i * cc_w_melzi_mounts / 2 + w_melzi / 2, 0])
+								cylinder(r1 = d_M3_screw / 2 + 3, r2 = d_M3_screw / 2 + 1, h = h_standoff, center = true);
+
+						translate([0, 0, 1 - h_standoff / 2]) {
+							hull(){
+								translate([offset_melzi_mounts, -cc_w_melzi_mounts / 2 + w_melzi / 2, 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+
+								translate([offset_melzi_mounts, cc_w_melzi_mounts / 2 + w_melzi / 2, 0])
+									cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+							}
+
+							translate([4, w_melzi / 2, 0])
+								hull()
+									for (i = [0, -10])
+										translate([i, 0, 0])
+											cylinder(r = d_M3_screw / 2 + 3, h = 2, center = true);
+						}
+					}
+
+					for (i = [-1, 1])
+						translate([offset_melzi_mounts, i * cc_w_melzi_mounts / 2 + w_melzi / 2, 0])
+							cylinder(r = d_M3_screw / 2 - 0.25, h = h_standoff + 1, center = true);
+
+					translate([-6, w_melzi / 2, 0])
+						cylinder(r = d_M3_screw / 2, h = h_standoff + 1, center = true);
+				}
+}
+
+module connector_plate() {
+	l_bbl_opening = 15; // length of barrel connector panel opening
+	w_bbl_opening = 11.5; // width of barrel connector panel opening
+	t_bbl_mount = 2; // thickness of the barrel connector mounting plate
+	t_bbl_panel = 1.75; // thickness of the barrel connector panel (groove in barrel jack)
+	l_bbl_body = l_bbl_opening + 2; // length of connector body
+	w_bbl_body = w_bbl_opening + 2; // width of connector body
+	h_bbl_case = 18; // height of the barrel connector case
+
+	h_plate = 12 + t_bbl_panel; // tall enough for hooking into 12mm plywood
+
+	l_rj45_housing = 36.5;
+	w_rj45_housing = 22;
+	w_rj45_jack = 14;
+	l_rj45_jack = 16.5;
+	top_offset_rj45_jack = 6;
+	cc_rj45_mounts = 27.5;
+
+	l_usb_housing = 38;
+	w_usb_housing = 13;
+	cc_usb_mounts = 28;
+	l_usb_opening = 17;
+	w_usb_opening = 9;
+	r_plate_corners = 10;
+	l_plate = 102; //l_rj45_housing + l_usb_housing + w_bbl_opening + 12;
+	w_plate = 24; //w_rj45_housing + 2;
+
+	difference() {
+		union() {
+			hull()
+				for (i = [-1, 1])
+					for (j = [-1, 1])
+						translate([i * (l_plate / 2 - r_plate_corners), j * (w_plate / 2 - r_plate_corners), 0])
+							cylinder(r = r_plate_corners, h = h_plate);
+
+			hull()
+				for (i = [-1, 1])
+					for (j = [-1, 1])
+						translate([i * (l_plate / 2 - r_plate_corners + 5), j * (w_plate / 2 - r_plate_corners + 5), 0])
+							cylinder(r = r_plate_corners, h = t_bbl_panel);
+
+			translate([(l_plate - l_usb_housing) / 2 - 5 - l_usb_housing / 2, 0, h_plate])
+				hull()
+					for (i = [-1, 1])
+						translate([0, i * (w_plate / 2 - 1), 0])
+							cylinder(r1 = 4, r2 = 0, h = 3);
+
+			translate([0, 0, h_plate])
+				hull()
+					for (i = [-1, 1])
+						translate([i * (l_plate / 2 - 1), 0, 0])
+							cylinder(r1 = 4, r2 = 0, h = 3);
+
+		}
+
+		hull()
+			for (i = [-1, 1])
+				for (j = [-1, 1])
+					translate([i * (l_plate / 2 - r_plate_corners - 1), j * (w_plate / 2 - r_plate_corners - 1), t_bbl_panel])
+						cylinder(r = r_plate_corners - 1, h = h_plate + 5);
+
+		// barrel connector
+		translate([-(l_plate - w_bbl_opening) / 2 + 1, w_plate / 2 - l_bbl_opening - 1, 0]) {
+			translate([0, 0, -1])
+				cube([w_bbl_opening, l_bbl_opening + 10, h_bbl_case + 1]);
+
+			translate([-3, -3, t_bbl_panel])
+				cube([w_bbl_opening + 6, l_bbl_opening + 16, h_plate]);
+		}
+
+		// rj45 jack
+		translate([-12, 0, 0]) {
+			translate([-l_rj45_jack / 2, top_offset_rj45_jack - w_rj45_housing / 2, -1]) {
+				cube([l_rj45_jack, w_rj45_jack, h_plate + 2]);
+
+				translate([-(w_rj45_housing - l_rj45_jack) / 2, -w_plate / 2, t_bbl_panel + 1])
+					cube([w_rj45_housing, 2 * w_plate, h_plate]);
+			}
+
+			for (i = [-1, 1])
+				translate([i * cc_rj45_mounts / 2, 0, -1])
+					cylinder(r = d_M3_screw / 2, h = h_plate + 2);
+		}
+
+		// usb jack
+		translate([(l_plate - l_usb_housing) / 2 - 4, 0, 0]) {
+			for (i = [-1, 1])
+				translate([i * cc_usb_mounts / 2, 0, -1])
+					cylinder(r = d_M3_screw / 2, h = h_plate + 2);
+
+			translate([-l_usb_opening / 2, -w_usb_opening / 2, -1])
+				cube([l_usb_opening, w_usb_opening, h_plate + 2]);
+		}
 	}
 }
