@@ -1,0 +1,3 @@
+[submodule "scad_libraries"]
+	path = scad_libraries
+	url = https://github.com/earlephilhower/scad_libraries
